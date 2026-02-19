@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SERPIENTE // ARCADE</title>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --neon-green: #00ff41;
+    --neon-pink: #ff006e;
+    --neon-cyan: #00f5ff;
+    --neon-yellow: #ffbe0b;
+    --bg: #050a05;
+    --grid: #0a1a0a;
+    --panel: #070f07;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    font-family: 'Press Start 2P', monospace;
+    overflow: hidden;
+    position: relative;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: 
+      repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,255,65,0.015) 2px, rgba(0,255,65,0.015) 4px),
+      repeating-linear-gradient(90deg, transparent, transparent 2px, rgba(0,255,65,0.015) 2px, rgba(0,255,65,0.015) 4px);
+    pointer-events: none;
+    z-index: 10;
+  }
+
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: radial-gradient(ellipse at center, transparent 50%, rgba(0,0,0,0.7) 100%);
+    pointer-events: none;
+    z-index: 11;
+  }
+
+  .container {
+    display: flex;
+    gap: 24px;
+    align-items: flex-start;
+    z-index: 1;
+  }
+
+  .side-panel {
+    width: 160px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .panel-box {
+    border: 1px solid var(--neon-green);
+    background: var(--panel);
+    padding: 12px;
+    box-shadow: 0 0 8px rgba(0,255,65,0.3), inset 0 0 12px rgba(0,255,65,0.05);
+  }
+
+  .panel-label {
+    font-size: 6px;
+    color: var(--neon-green);
+    opacity: 0.6;
+    letter-spacing: 2px;
+    margin-bottom: 6px;
+  }
+
+  .panel-value {
+    font-size: 14px;
+    color: var(--neon-green);
+    text-shadow: 0 0 10px var(--neon-green);
+  }
+
+  .panel-value.pink { color: var(--neon-pink); text-shadow: 0 0 10px var(--neon-pink); }
+  .panel-value.cyan { color: var(--neon-cyan); text-shadow: 0 0 10px var(--neon-cyan); }
+
+  .game-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .title {
+    font-size: 20px;
+    color: var(--neon-green);
+    text-shadow: 0 0 20px var(--neon-green), 0 0 40px var(--neon-green);
+    letter-spacing: 4px;
+    animation: flicker 4s infinite;
+  }
+
+  @keyframes flicker {
+    0%, 96%, 100% { opacity: 1; }
+    97% { opacity: 0.4; }
+    98% { opacity: 1; }
+    99% { opacity: 0.2; }
+  }
+
+  canvas {
+    display: block;
+    border: 2px solid var(--neon-green);
+    box-shadow: 
+      0 0 20px rgba(0,255,65,0.5),
+      0 0 60px rgba(0,255,65,0.2),
+      inset 0 0 30px rgba(0,255,65,0.05);
+    image-rendering: pixelated;
+    background: var(--bg);
+  }
+
+  .controls-hint {
+    font-size: 5px;
+    color: var(--neon-green);
+    opacity: 0.4;
+    letter-spacing: 2px;
+    text-align: center;
+  }
+
+  .overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: rgba(5, 10, 5, 0.92);
+    gap: 24px;
+    z-index: 20;
+  }
+
+  .overlay-title {
+    font-size: 28px;
+    color: var(--neon-green);
+    text-shadow: 0 0 30px var(--neon-green);
+    animation: pulse 1.5s ease-in-out infinite;
+  }
+
+  .overlay-title.game-over { color: var(--neon-pink); text-shadow: 0 0 30px var(--neon-pink); }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+  }
+
+  .overlay-sub {
+    font-size: 7px;
+    color: var(--neon-cyan);
+    letter-spacing: 3px;
+    text-shadow: 0 0 10px var(--neon-cyan);
+  }
+
+  .start-btn {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 10px;
+    background: none;
+    border: 2px solid var(--neon-green);
+    color: var(--neon-green);
+    padding: 12px 24px;
+    cursor: pointer;
+    letter-spacing: 2px;
+    text-shadow: 0 0 8px var(--neon-green);
+    box-shadow: 0 0 12px rgba(0,255,65,0.4);
+    transition: all 0.1s;
+    animation: btn-glow 2s ease-in-out infinite;
+  }
+
+  @keyframes btn-glow {
+    0%, 100% { box-shadow: 0 0 12px rgba(0,255,65,0.4); }
+    50% { box-shadow: 0 0 24px rgba(0,255,65,0.8), inset 0 0 12px rgba(0,255,65,0.1); }
+  }
+
+  .start-btn:hover {
+    background: rgba(0,255,65,0.1);
+    transform: scale(1.05);
+  }
+
+  .score-display {
+    font-size: 12px;
+    color: var(--neon-yellow);
+    text-shadow: 0 0 10px var(--neon-yellow);
+  }
+
+  .speed-bar {
+    width: 100%;
+    height: 4px;
+    background: rgba(0,255,65,0.1);
+    margin-top: 8px;
+    border: 1px solid rgba(0,255,65,0.2);
+    overflow: hidden;
+  }
+
+  .speed-fill {
+    height: 100%;
+    background: var(--neon-cyan);
+    box-shadow: 0 0 6px var(--neon-cyan);
+    transition: width 0.3s;
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <div class="side-panel">
+    <div class="panel-box">
+      <div class="panel-label">PUNTOS</div>
+      <div class="panel-value" id="score-display">0000</div>
+    </div>
+    <div class="panel-box">
+      <div class="panel-label">RÉCORD</div>
+      <div class="panel-value pink" id="high-display">0000</div>
+    </div>
+    <div class="panel-box">
+      <div class="panel-label">NIVEL</div>
+      <div class="panel-value cyan" id="level-display">01</div>
+      <div class="speed-bar"><div class="speed-fill" id="speed-bar" style="width:10%"></div></div>
+    </div>
+    <div class="panel-box">
+      <div class="panel-label">LARGO</div>
+      <div class="panel-value" id="length-display">01</div>
+    </div>
+  </div>
+
+  <div class="game-wrapper">
+    <div class="title">// SERPIENTE //</div>
+    <div style="position:relative">
+      <canvas id="canvas" width="400" height="400"></canvas>
+      <div class="overlay" id="overlay">
+        <div class="overlay-title" id="overlay-title">SERPIENTE</div>
+        <div class="overlay-sub" id="overlay-sub">ARCADE EDITION</div>
+        <button class="start-btn" id="start-btn" onclick="startGame()">[ INICIAR ]</button>
+      </div>
+    </div>
+    <div class="controls-hint">WASD / FLECHAS — CONTROLA LA SERPIENTE</div>
+  </div>
+</div>
+
+<script>
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+const CELL = 20;
+const COLS = 20;
+const ROWS = 20;
+
+let snake, dir, nextDir, food, score, highScore, level, gameLoop, running;
+
+const COLORS = {
+  head: '#00ff41',
+  body: '#00cc33',
+  bodyDim: '#007a1f',
+  food: '#ff006e',
+  foodGlow: 'rgba(255,0,110,0.3)',
+};
+
+function init() {
+  snake = [{x:10,y:10},{x:9,y:10},{x:8,y:10}];
+  dir = {x:1,y:0};
+  nextDir = {x:1,y:0};
+  score = 0;
+  level = 1;
+  running = false;
+  spawnFood();
+  updateUI();
+}
+
+function spawnFood() {
+  do {
+    food = {
+      x: Math.floor(Math.random() * COLS),
+      y: Math.floor(Math.random() * ROWS)
+    };
+  } while (snake.some(s => s.x === food.x && s.y === food.y));
+}
+
+function startGame() {
+  document.getElementById('overlay').style.display = 'none';
+  running = true;
+  if (gameLoop) clearInterval(gameLoop);
+  init();
+  running = true;
+  setSpeed();
+}
+
+function setSpeed() {
+  if (gameLoop) clearInterval(gameLoop);
+  const speed = Math.max(60, 200 - (level - 1) * 18);
+  gameLoop = setInterval(tick, speed);
+}
+
+function tick() {
+  dir = {...nextDir};
+  const head = {x: snake[0].x + dir.x, y: snake[0].y + dir.y};
+
+  // wall collision
+  if (head.x < 0 || head.x >= COLS || head.y < 0 || head.y >= ROWS) return endGame();
+  // self collision
+  if (snake.some(s => s.x === head.x && s.y === head.y)) return endGame();
+
+  snake.unshift(head);
+
+  if (head.x === food.x && head.y === food.y) {
+    score += 10 * level;
+    level = Math.floor(snake.length / 5) + 1;
+    if (score > (highScore || 0)) highScore = score;
+    spawnFood();
+    setSpeed();
+  } else {
+    snake.pop();
+  }
+
+  updateUI();
+  draw();
+}
+
+function endGame() {
+  clearInterval(gameLoop);
+  running = false;
+  flashDeath(() => {
+    const overlay = document.getElementById('overlay');
+    document.getElementById('overlay-title').textContent = 'GAME OVER';
+    document.getElementById('overlay-title').classList.add('game-over');
+    document.getElementById('overlay-sub').textContent = `PUNTOS: ${String(score).padStart(4,'0')}`;
+    document.getElementById('start-btn').textContent = '[ REINTENTAR ]';
+    overlay.style.display = 'flex';
+  });
+}
+
+function flashDeath(cb) {
+  let flashes = 0;
+  const interval = setInterval(() => {
+    ctx.fillStyle = flashes % 2 === 0 ? 'rgba(255,0,110,0.3)' : 'transparent';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    draw();
+    flashes++;
+    if (flashes > 6) { clearInterval(interval); cb(); }
+  }, 80);
+}
+
+function draw() {
+  // Background
+  ctx.fillStyle = '#050a05';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  // Grid
+  ctx.strokeStyle = 'rgba(0,255,65,0.05)';
+  ctx.lineWidth = 0.5;
+  for (let x = 0; x <= COLS; x++) {
+    ctx.beginPath(); ctx.moveTo(x*CELL,0); ctx.lineTo(x*CELL,canvas.height); ctx.stroke();
+  }
+  for (let y = 0; y <= ROWS; y++) {
+    ctx.beginPath(); ctx.moveTo(0,y*CELL); ctx.lineTo(canvas.width,y*CELL); ctx.stroke();
+  }
+
+  // Food glow
+  ctx.fillStyle = COLORS.foodGlow;
+  ctx.beginPath();
+  ctx.arc(food.x*CELL+CELL/2, food.y*CELL+CELL/2, CELL, 0, Math.PI*2);
+  ctx.fill();
+
+  // Food
+  ctx.fillStyle = COLORS.food;
+  ctx.shadowColor = COLORS.food;
+  ctx.shadowBlur = 12;
+  ctx.fillRect(food.x*CELL+2, food.y*CELL+2, CELL-4, CELL-4);
+  ctx.shadowBlur = 0;
+
+  // Snake
+  snake.forEach((seg, i) => {
+    const t = i / snake.length;
+    if (i === 0) {
+      ctx.fillStyle = COLORS.head;
+      ctx.shadowColor = COLORS.head;
+      ctx.shadowBlur = 16;
+    } else {
+      const g = Math.floor(180 - t * 140);
+      ctx.fillStyle = `rgb(0,${g},${Math.floor(g*0.4)})`;
+      ctx.shadowColor = '#00ff41';
+      ctx.shadowBlur = 4;
+    }
+    const pad = i === 0 ? 1 : 2;
+    ctx.fillRect(seg.x*CELL+pad, seg.y*CELL+pad, CELL-pad*2, CELL-pad*2);
+
+    // Head eyes
+    if (i === 0) {
+      ctx.fillStyle = '#050a05';
+      ctx.shadowBlur = 0;
+      const ex = dir.x === 1 ? 12 : dir.x === -1 ? 4 : 6;
+      const ey = dir.y === 1 ? 12 : dir.y === -1 ? 4 : 6;
+      ctx.fillRect(seg.x*CELL+ex, seg.y*CELL+ey, 3, 3);
+      ctx.fillRect(seg.x*CELL+(CELL-ex-3), seg.y*CELL+(dir.y !== 0 ? ey : CELL-ey-3), 3, 3);
+    }
+  });
+  ctx.shadowBlur = 0;
+}
+
+function updateUI() {
+  document.getElementById('score-display').textContent = String(score).padStart(4,'0');
+  document.getElementById('high-display').textContent = String(highScore||0).padStart(4,'0');
+  document.getElementById('level-display').textContent = String(level).padStart(2,'0');
+  document.getElementById('length-display').textContent = String(snake.length).padStart(2,'0');
+  const pct = Math.min(100, ((level-1)/10)*100 + 10);
+  document.getElementById('speed-bar').style.width = pct + '%';
+}
+
+document.addEventListener('keydown', e => {
+  const map = {
+    ArrowUp: {x:0,y:-1}, ArrowDown: {x:0,y:1},
+    ArrowLeft: {x:-1,y:0}, ArrowRight: {x:1,y:0},
+    w: {x:0,y:-1}, s: {x:0,y:1}, a: {x:-1,y:0}, d: {x:1,y:0},
+    W: {x:0,y:-1}, S: {x:0,y:1}, A: {x:-1,y:0}, D: {x:1,y:0},
+  };
+  if (map[e.key]) {
+    const nd = map[e.key];
+    if (nd.x !== -dir.x || nd.y !== -dir.y) nextDir = nd;
+    e.preventDefault();
+  }
+});
+
+init();
+draw();
+</script>
+</body>
+</html>
